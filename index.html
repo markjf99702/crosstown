@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crosstown</title>
+  <meta name="description" content="A word hunt drawn as a transit map. Every letter is a stop on some line, each theme word you find becomes a line, and one word runs clear across town. 36 puzzles, no ads, no account, works offline.">
+  <meta property="og:title" content="Crosstown">
+  <meta property="og:description" content="A word hunt drawn as a transit map. Every letter is a stop on some line.">
+  <meta property="og:image" content="https://crosstown.junkdrawer.works/og.png">
+  <meta property="og:url" content="https://crosstown.junkdrawer.works/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#eef2f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f141b" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="preload" href="fonts/overpass.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <noscript><p class="noscript">Crosstown needs JavaScript to draw the map.</p></noscript>
+
+  <div class="app" id="app">
+
+    <main class="screen list" id="s-list">
+      <div class="list-scroll">
+        <header class="mast">
+          <svg class="mark" viewBox="0 0 120 34" aria-hidden="true">
+            <path class="mark-b" d="M4 28h28l14-14h30"/>
+            <path class="mark-a" d="M22 6l10 10h34l12 12h38"/>
+            <path class="mark-x" d="M4 17h112"/>
+            <path class="mark-x2" d="M4 17h112"/>
+            <g class="mark-s"><circle cx="4" cy="17" r="4"/><circle cx="46" cy="17" r="4"/><circle cx="82" cy="17" r="4"/><circle cx="116" cy="17" r="4"/></g>
+          </svg>
+          <h1>Crosstown</h1>
+          <p class="tag">A word hunt drawn as a transit map. Every letter is a stop on some line, and one line runs clear across town.</p>
+          <div class="mast-row">
+            <button type="button" class="btn primary" id="b-continue">Play No. 1</button>
+            <button type="button" class="btn" id="b-how">How to play</button>
+            <button type="button" class="btn icon" id="b-list-menu" aria-label="Options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          </div>
+          <p class="tally" id="tally"></p>
+        </header>
+
+        <ol class="route" id="route"></ol>
+
+        <footer class="jd-foot">
+          <a href="https://junkdrawer.works/">Part of junkdrawer.works</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://junkdrawer.works/privacy.html">Privacy</a>
+        </footer>
+      </div>
+    </main>
+
+    <main class="screen play" id="s-play" hidden>
+      <header class="bar">
+        <button type="button" class="btn icon" id="b-back" aria-label="All puzzles"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <p class="where" id="where">No. 1</p>
+        <p class="clock" id="clock" hidden>0:00</p>
+        <button type="button" class="btn icon" id="b-menu" aria-label="Options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      </header>
+
+      <section class="sign" aria-label="Clue">
+        <p class="sign-label">Clue</p>
+        <h2 class="sign-clue" id="clue"></h2>
+        <p class="sign-count" id="count"></p>
+      </section>
+
+      <p class="readout" id="readout" role="status" aria-live="polite"></p>
+
+      <div class="board-wrap">
+        <svg class="board" id="board" viewBox="0 0 60 80" role="application" tabindex="0" aria-label="The map. Drag across letters to trace a word, or use the arrow keys and Enter."></svg>
+      </div>
+
+      <footer class="fare" id="fare">
+        <div class="meter" id="meter" role="img" aria-label="Fare">
+          <span class="meter-label">Fare</span>
+          <span class="pips" id="pips"></span>
+        </div>
+        <button type="button" class="btn token" id="b-token" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8.5 9.5h7"/></svg>
+          <span id="token-label">No tokens</span>
+        </button>
+      </footer>
+      <footer class="fare after" id="after" hidden>
+        <button type="button" class="btn" id="b-results">Results</button>
+        <button type="button" class="btn primary" id="b-next">Next puzzle</button>
+      </footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <div class="sheet" id="sheet-how" hidden>
+    <div class="scrim" data-close></div>
+    <section class="panel" role="dialog" aria-modal="true" aria-labelledby="how-title">
+      <h2 id="how-title">How to play</h2>
+      <ul class="how">
+        <li><strong>Find the lines.</strong> Theme words are hidden in the map. Trace one from stop to stop in any direction, diagonals included. Drag across the letters, or tap them one at a time and tap the last letter again.</li>
+        <li><strong>Every letter is used once.</strong> Each stop belongs to exactly one line, and lines never cross.</li>
+        <li><strong>One word is the Crosstown.</strong> It names the theme and runs from one edge of the map to the opposite edge.</li>
+        <li><strong>Detours earn fare.</strong> Any other word of four letters or more is a detour. Four letters earn 1 fare, five earn 2, six earn 3, seven or more earn 4. Every 4 fare becomes a token.</li>
+        <li><strong>A token is a hint.</strong> It rings the stops of a line you haven’t found. A second token on the same line draws its route.</li>
+        <li><strong>Three stars.</strong> One for finishing, one for spending no tokens, one for finding the Crosstown before any other line.</li>
+      </ul>
+      <div class="panel-row"><button type="button" class="btn primary" data-close>Got it</button></div>
+    </section>
+  </div>
+
+  <div class="sheet" id="sheet-menu" hidden>
+    <div class="scrim" data-close></div>
+    <section class="panel" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+      <h2 id="menu-title">Options</h2>
+      <label class="opt" for="o-clock">
+        <span><strong>Clock</strong><small>Time each puzzle and keep your best.</small></span>
+        <input type="checkbox" id="o-clock" class="switch">
+      </label>
+      <label class="opt" for="o-night">
+        <span><strong>Night service</strong><small>Hide the clue until you find your first line.</small></span>
+        <input type="checkbox" id="o-night" class="switch">
+      </label>
+      <div class="panel-col">
+        <button type="button" class="btn" id="m-how">How to play</button>
+        <button type="button" class="btn" id="m-restart" hidden>Start this puzzle over</button>
+        <button type="button" class="btn danger" id="m-erase" hidden>Erase all progress</button>
+      </div>
+      <footer class="jd-foot in-sheet">
+        <a href="https://junkdrawer.works/">Part of junkdrawer.works</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://junkdrawer.works/privacy.html">Privacy</a>
+      </footer>
+      <div class="panel-row"><button type="button" class="btn primary" data-close>Done</button></div>
+    </section>
+  </div>
+
+  <div class="sheet" id="sheet-done" hidden>
+    <div class="scrim" data-close></div>
+    <section class="panel" role="dialog" aria-modal="true" aria-labelledby="done-title">
+      <p class="eyebrow">End of the line</p>
+      <h2 id="done-title"></h2>
+      <ul class="stars" id="done-stars"></ul>
+      <p class="done-stats" id="done-stats"></p>
+      <h3 class="key-title">Key to lines</h3>
+      <ul class="key" id="done-key"></ul>
+      <textarea class="share-text" id="share-text" rows="3" readonly hidden aria-label="Result to share"></textarea>
+      <div class="panel-row">
+        <button type="button" class="btn" id="b-share">Share</button>
+        <button type="button" class="btn" data-close>See the map</button>
+        <button type="button" class="btn primary" id="b-done-next">Next puzzle</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
