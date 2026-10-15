@@ -9,6 +9,12 @@ import { THEMES } from '../tools/themes.mjs';
 import { isRude } from '../tools/rude-words.mjs';
 import { fareFor, FARE_PER_TOKEN, starsFor } from '../js/rules.js';
 
+// Does the line start on one edge of the map and end on the opposite one?
+const acrossTown = line => {
+  const a = line[0], b = line.at(-1);
+  return (col(a) === 0 && col(b) === W - 1) || (col(a) === W - 1 && col(b) === 0) || (row(a) === 0 && row(b) === H - 1) || (row(a) === H - 1 && row(b) === 0);
+};
+
 test('the pack matches the themes, in order, with no repeats', () => {
   assert.deepEqual(PUZZLES.map(p => p.id), THEMES.map(t => t.id));
   assert.equal(new Set(PUZZLES.map(p => p.id)).size, PUZZLES.length);
@@ -39,10 +45,7 @@ for (const p of PUZZLES) {
 
   test(`${p.id}: the words are the theme's, and the first runs edge to edge`, () => {
     assert.equal(words[0], theme.cross);
-    const first = p.lines[0][0], last = p.lines[0].at(-1);
-    const acrossTown = (col(first) === 0 && col(last) === W - 1) || (col(first) === W - 1 && col(last) === 0)
-      || (row(first) === 0 && row(last) === H - 1) || (row(first) === H - 1 && row(last) === 0);
-    assert.ok(spans(p.lines[0]) && acrossTown, 'the Crosstown should start and end on opposite edges');
+    assert.ok(spans(p.lines[0]) && acrossTown(p.lines[0]), 'the Crosstown should start and end on opposite edges');
     const listed = new Set(theme.words.split(' '));
     for (const w of words.slice(1)) assert.ok(listed.has(w), `${w} isn't in the theme`);
     assert.equal(new Set(words).size, words.length);
@@ -56,6 +59,10 @@ for (const p of PUZZLES) {
       const own = new Set(line);
       for (const t of traces(p.grid, words[k], 40)) assert.ok(t.every(i => own.has(i)), `${words[k]} can be traced another way`);
     });
+  });
+
+  test(`${p.id}: only the Crosstown runs edge to edge`, () => {
+    p.lines.forEach((line, k) => { if (k) assert.ok(!acrossTown(line), `${words[k]} runs edge to edge too, so it could be taken for the Crosstown`); });
   });
 
   test(`${p.id}: a theme word that isn't a line can't be traced either`, () => {

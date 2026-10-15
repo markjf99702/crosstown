@@ -152,11 +152,19 @@ function turns(path) {
   return { n, longest: Math.max(longest, 2) };
 }
 
+// Does the line start on one edge of the map and end on the opposite one? The Crosstown always does.
+function acrossTown(line) {
+  const a = line[0], b = line.at(-1);
+  return (col(a) === 0 && col(b) === W - 1) || (col(a) === W - 1 && col(b) === 0) || (row(a) === 0 && row(b) === H - 1) || (row(a) === H - 1 && row(b) === 0);
+}
+
 // Lower is better. A word that can also be spelled through some other line's stops is the thing to avoid, and so
 // is a theme word left out of the set that can still be traced: whoever finds it would be told it's only a detour.
+// So is another line running edge to edge, which could be taken for the Crosstown.
 function judge(grid, words, lines, unused) {
   let stray = 0, dull = 0;
   for (const word of unused) if (traces(grid, word, 1).length) stray++;
+  lines.forEach((line, k) => { if (k && acrossTown(line)) stray++; });
   words.forEach((word, k) => {
     const own = new Set(lines[k]);
     for (const t of traces(grid, word, 12)) if (t.some(i => !own.has(i))) stray++;
