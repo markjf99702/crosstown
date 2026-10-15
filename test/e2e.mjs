@@ -134,15 +134,19 @@ assert.ok(ring.blue && ring.stroke !== ring.fill, `the cursor should show on a b
 
 // An open sheet starts on its main button, keeps the keyboard inside it, and hands focus back when it closes.
 const focused = () => page.evaluate(() => document.activeElement.id || document.activeElement.textContent.trim());
+// The clock stops behind a sheet, so the letters go too, until it closes.
+const letters = (on = page) => on.evaluate(() => getComputedStyle(document.querySelector('#board .stop text')).visibility);
 await page.focus('#b-menu');
 await page.keyboard.press('Enter');
 assert.equal(await focused(), 'Done');
+assert.equal(await letters(), 'hidden', 'the map can be read behind a sheet while the clock is stopped');
 for (let k = 0; k < 12; k++) {
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.getElementById('app').contains(document.activeElement)), false, 'Tab reached the page behind a sheet');
 }
 await page.keyboard.press('Escape');
 assert.equal(await page.evaluate(() => document.activeElement.id), 'b-menu');
+assert.equal(await letters(), 'visible');
 
 // Finish it. The Crosstown wasn't first and tokens were spent, so one star.
 for (const k of [0, 1, 5, 6].filter(k => k < p.lines.length)) await drag(page, p.lines[k]);
@@ -244,6 +248,7 @@ function contrast(a, b) {
   await tab.click('#b-continue');
   await drag(tab, last.lines[0]);
   await tab.waitForSelector('#sheet-done:not([hidden])');
+  assert.equal(await letters(tab), 'visible', 'the finished map should show behind the done sheet');
   assert.equal(await tab.isHidden('#b-done-next'), true);
   assert.equal(await tab.evaluate(() => document.activeElement.id), 'b-share', 'the last done sheet should start on Share');
 

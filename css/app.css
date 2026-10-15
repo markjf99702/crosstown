@@ -221,6 +221,7 @@ a { color: inherit; }
 .board .stop.sel text { fill: var(--on-select); }
 .board .stop.on .dot { stroke-width: 0; }
 .board .stop.on text { fill: var(--on-line); }
+.board.paused text { visibility: hidden; }   /* behind an open sheet, while the clock is stopped */
 .board .stop.c0 .dot { fill: var(--cross); } .board .stop.c0 text { fill: var(--on-cross); }
 .board .stop.c1 .dot { fill: var(--l1); } .board .stop.c2 .dot { fill: var(--l2); }
 .board .stop.c3 .dot { fill: var(--l3); } .board .stop.c4 .dot { fill: var(--l4); }

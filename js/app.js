@@ -346,7 +346,8 @@ const anySheet = () => [...document.querySelectorAll('.sheet')].some(s => !s.hid
 let opener = null;
 function openSheet(id) {
   opener = document.activeElement;
-  if (cur) { stopClock(); }
+  // The clock stops while a sheet is open, so the letters go too: no studying the map off the clock.
+  if (cur) { stopClock(); board.classList.toggle('paused', !cur.game.done); }
   $('app').inert = true;   // the page behind stays out of reach of Tab and screen readers until the sheet closes
   $(id).hidden = false;
   $(id).querySelector('.panel').focus?.();
@@ -356,6 +357,7 @@ function openSheet(id) {
 function closeSheets() {
   for (const s of document.querySelectorAll('.sheet')) s.hidden = true;
   $('app').inert = false;
+  board.classList.remove('paused');
   $('share-text').hidden = true;
   armed = null; $('m-restart').textContent = 'Start this puzzle over'; $('m-erase').textContent = 'Erase all progress';
   if (cur) startClock();
