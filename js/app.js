@@ -93,7 +93,7 @@ function drawList() {
 let cur = null;      // the puzzle on screen: { i, p, words, extra, lineOf, game }
 let sel = [];        // stops in the word being traced
 let cursor = -1;     // keyboard position
-let drag = null;     // { changed, tapLast }
+let drag = null;     // { changed, tapLast, joined }
 let ticking = 0, since = 0;
 const board = $('board');
 const layers = {};
@@ -228,11 +228,11 @@ board.addEventListener('pointerdown', e => {
   if (taken(i)) { sel = []; nameLine(i); paint(); return; }
   if (cur.game.done) return;
   board.setPointerCapture?.(e.pointerId);
-  drag = { changed: false, tapLast: false };
+  drag = { changed: false, tapLast: false, joined: false };
   const at = sel.indexOf(i);
   if (at >= 0 && at === sel.length - 1) drag.tapLast = true;
   else if (at >= 0) sel = sel.slice(0, at + 1);
-  else if (sel.length && adjacent(sel[sel.length - 1], i)) sel.push(i);
+  else if (sel.length && adjacent(sel[sel.length - 1], i)) { sel.push(i); drag.joined = true; }
   else sel = [i];
   showTrace(); paint();
 });
@@ -240,9 +240,13 @@ board.addEventListener('pointermove', e => {
   if (!drag || !cur) return;
   const i = stopAt(e, 0.4);
   if (i < 0 || i === sel[sel.length - 1]) return;
-  if (sel.length > 1 && i === sel[sel.length - 2]) sel.pop();
-  else if (!sel.includes(i) && !taken(i) && adjacent(sel[sel.length - 1], i)) sel.push(i);
+  // A tap beside the tapped letters adds to their word, but a drag from there spells a word of its own, so a stray
+  // tap can't end up in front of it. Dragging on from the last tapped letter still carries that word on.
+  const word = drag.joined ? sel.slice(-1) : sel;
+  if (word.length > 1 && i === word[word.length - 2]) word.pop();
+  else if (!word.includes(i) && !taken(i) && adjacent(word[word.length - 1], i)) word.push(i);
   else return;
+  sel = word; drag.joined = false;
   drag.changed = true;
   showTrace(); paint();
 });

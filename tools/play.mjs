@@ -44,7 +44,13 @@ export async function drag(page, path) {
   await page.mouse.up();
 }
 
+// Tap one stop.
+export async function tap(page, i) {
+  const p = await spot(page, i);
+  await page.mouse.click(p.x, p.y);
+}
+
 // Tap the stops one at a time, then the last one again.
 export async function tapOut(page, path) {
-  for (const i of [...path, path.at(-1)]) { const p = await spot(page, i); await page.mouse.click(p.x, p.y); }
+  for (const i of [...path, path.at(-1)]) await tap(page, i);
 }

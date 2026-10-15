@@ -1,8 +1,8 @@
 // Plays the game in Chromium through the real page:  node test/e2e.mjs  (needs Playwright)
 import assert from 'node:assert/strict';
-import { playwright, serve, drag, tapOut } from '../tools/play.mjs';
+import { playwright, serve, drag, tap, tapOut } from '../tools/play.mjs';
 import { PUZZLES } from '../js/puzzles.js';
-import { traces, spell, adjacent } from '../js/board.js';
+import { traces, spell, adjacent, NEIGHBORS } from '../js/board.js';
 import { fareFor, FARE_PER_TOKEN } from '../js/rules.js';
 
 const { server, base } = serve();
@@ -44,9 +44,12 @@ assert.equal(await text('#count'), `0 of ${p.lines.length} lines`);
 assert.equal(await page.locator('#board .stop').count(), 48);
 assert.equal(await page.isDisabled('#b-token'), true);
 
-// Drag out one line, tap out another.
+// Drag out one line, tap out another. A stray tap just before, beside where the drag starts, stays out of its word.
+const stray = NEIGHBORS[p.lines[2][0]].find(j => !p.lines[2].includes(j));
+assert.ok(stray !== undefined, 'no stop beside the line to tap by mistake');
+await tap(page, stray);
 await drag(page, p.lines[2]);
-assert.equal(await text('#count'), `1 of ${p.lines.length} lines`);
+assert.equal(await text('#count'), `1 of ${p.lines.length} lines`, 'a stray tap ended up in front of the dragged word');
 assert.equal(await text('#readout'), words[2]);
 assert.equal(await page.locator('#board .stop.on.c2').count(), p.lines[2].length);
 await tapOut(page, p.lines[4]);
@@ -294,6 +297,19 @@ function contrast(a, b) {
   assert.equal(await tab.isDisabled('#b-token'), false);
   await tab.click('#b-token');
   assert.equal(await tab.locator('#board .guide').count(), 1, 'the token should draw the last line\'s route');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
+// Tapping the first letters of a word and then dragging on from the last one carries the same word on.
+{
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: {} });
+  await tab.click('#b-continue');
+  await tap(tab, p.lines[1][0]);
+  await tap(tab, p.lines[1][1]);
+  await drag(tab, p.lines[1].slice(1));
+  assert.equal(await tab.textContent('#count'), `1 of ${p.lines.length} lines`, 'dragging on from the last tapped letter should carry the word on');
+  assert.equal(await tab.textContent('#readout'), words[1]);
   assert.deepEqual(errors, []);
   await other.close();
 }
