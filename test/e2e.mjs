@@ -225,6 +225,15 @@ async function visitor(state, options = {}) {
   return { other: context, tab, errors };
 }
 const finished = q => ({ found: q.lines.map((_, k) => k), detours: [], spent: 0, done: true, crossAt: 0 });
+// The contrast ratio of two computed colours, as WCAG reckons it.
+function contrast(a, b) {
+  const lum = c => {
+    const [r, g, bl] = c.match(/[\d.]+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
 
 // The last puzzle has no next one, so its done sheet starts on Share instead.
 {
@@ -248,6 +257,18 @@ const finished = q => ({ found: q.lines.map((_, k) => k), detours: [], spent: 0,
     assert.equal(await tab.textContent('#readout'), named(stop), 'Enter on a finished map should name the line');
   }
   assert.equal(await tab.locator('#board .stop.cursor').count(), 1);
+
+  // With every puzzle finished, the big button on the list says so in letters you can read, in either palette.
+  await tab.click('#b-back');
+  for (const colorScheme of ['light', 'dark']) {
+    await tab.emulateMedia({ colorScheme });
+    const btn = await tab.evaluate(() => {
+      const b = document.getElementById('b-continue'), s = getComputedStyle(b);
+      return { text: b.textContent, disabled: b.disabled, color: s.color, bg: s.backgroundColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.body).backgroundColor : s.backgroundColor };
+    });
+    assert.equal(btn.text, 'All finished');
+    assert.ok(btn.disabled && contrast(btn.color, btn.bg) >= 4.5, `"All finished" is hard to read in ${colorScheme}: ${JSON.stringify(btn)}`);
+  }
   assert.deepEqual(errors, []);
   await other.close();
 }
