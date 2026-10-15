@@ -58,6 +58,12 @@ for (const p of PUZZLES) {
     });
   });
 
+  test(`${p.id}: a theme word that isn't a line can't be traced either`, () => {
+    for (const w of theme.words.split(' ')) {
+      if (!words.includes(w)) assert.equal(traces(p.grid, w, 1).length, 0, `${w} is on the theme's list, but the map would call it a detour`);
+    }
+  });
+
   test(`${p.id}: detours are real finds, none is an answer, and none is rude`, () => {
     const list = p.detours.split(' ');
     assert.ok(list.length >= 100, 'too few detours to earn a token');

@@ -152,9 +152,11 @@ function turns(path) {
   return { n, longest: Math.max(longest, 2) };
 }
 
-// Lower is better. A word that can also be spelled through some other line's stops is the thing to avoid.
-function judge(grid, words, lines) {
+// Lower is better. A word that can also be spelled through some other line's stops is the thing to avoid, and so
+// is a theme word left out of the set that can still be traced: whoever finds it would be told it's only a detour.
+function judge(grid, words, lines, unused) {
   let stray = 0, dull = 0;
+  for (const word of unused) if (traces(grid, word, 1).length) stray++;
   words.forEach((word, k) => {
     const own = new Set(lines[k]);
     for (const t of traces(grid, word, 12)) if (t.some(i => !own.has(i))) stray++;
@@ -193,6 +195,7 @@ for (const theme of THEMES) {
     if (best && best.score <= rank * 2) return;
     if (rank >= SETS && best && best.score < 100) return;   // past the first few sets only to clear up a stray word
     const words = [theme.cross, ...set.words];
+    const unused = theme.words.split(' ').filter(w => !words.includes(w));
     const lengths = words.map(w => w.length);
     let made = 0;
     for (let attempt = 0; made < LAYOUTS && attempt < LAYOUTS * 40; attempt++) {
@@ -212,7 +215,7 @@ for (const theme of THEMES) {
         });
         const grid = Array(N);
         laid.forEach((line, k) => line.forEach((cell, n) => { grid[cell] = words[k][n]; }));
-        const score = judge(grid, words, laid) + rank * 2;
+        const score = judge(grid, words, laid, unused) + rank * 2;
         if (!best || score < best.score) best = { score, grid: grid.join(''), lines: laid, words };
       }
       if (best.score <= rank * 2) break;

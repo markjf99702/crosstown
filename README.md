@@ -25,7 +25,7 @@
 
 ## The puzzles
 
-The 36 puzzles are written for this game: the themes, the clues and the word lists are in `tools/themes.mjs`, and nothing is taken from any other game's puzzles. `node tools/make-puzzles.mjs` picks a set of words from each theme that fills the 48 stops exactly, packs them into the grid, and keeps the tidiest layout it finds: no word can be spelled through another line's stops, and no two lines cut across each other. `npm test` then checks every board again without trusting the tool.
+The 36 puzzles are written for this game: the themes, the clues and the word lists are in `tools/themes.mjs`, and nothing is taken from any other game's puzzles. `node tools/make-puzzles.mjs` picks a set of words from each theme that fills the 48 stops exactly, packs them into the grid, and keeps the tidiest layout it finds: no word can be spelled through another line's stops, no theme word left out of the set can be traced at all, and no two lines cut across each other. `npm test` then checks every board again without trusting the tool.
 
 To add a puzzle, add a theme (a clue, the Crosstown, and a dozen or so words of four letters or more) and run the tool.
 
