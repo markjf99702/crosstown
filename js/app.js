@@ -13,13 +13,33 @@ const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5
 // ---- what's saved -----------------------------------------------------------------------------------------------
 const KEY = 'crosstown.v1';
 const fresh = () => ({ found: [], detours: [], fare: 0, tokens: 0, spent: 0, hint: null, ms: 0, done: false, crossAt: -1, night: false });
+const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
 let saved = { options: { clock: false, night: false }, games: {}, best: {} };
 try {
   const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
-  if (raw && typeof raw === 'object') saved = { options: { ...saved.options, ...raw.options }, games: raw.games || {}, best: raw.best || {} };
+  if (raw && typeof raw === 'object') saved = { options: { ...saved.options, ...raw.options }, games: isObject(raw.games) ? raw.games : {}, best: isObject(raw.best) ? raw.best : {} };
 } catch { /* no storage here: play still works, it just isn't kept */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch { /* same */ } };
-const gameFor = id => saved.games[id] ? { ...fresh(), ...saved.games[id] } : null;
+
+// A saved game, read against its puzzle, so a damaged save or one from an older layout of the board can't stop
+// the page: line numbers the board doesn't have are dropped, and anything else that can't be read starts fresh.
+const byId = new Map(PUZZLES.map(p => [p.id, p]));
+function gameFor(id) {
+  const g = saved.games[id], p = byId.get(id);
+  if (!isObject(g) || !p) return null;
+  const n = p.lines.length;
+  const count = v => (Number.isInteger(v) && v >= 0 ? v : 0);
+  const found = Array.isArray(g.found) ? [...new Set(g.found.filter(k => Number.isInteger(k) && k >= 0 && k < n))] : [];
+  const h = g.hint;
+  const hint = isObject(h) && Number.isInteger(h.line) && h.line >= 0 && h.line < n && !found.includes(h.line) ? { line: h.line, level: h.level > 1 ? 2 : 1 } : null;
+  return {
+    ...fresh(), ...g, found, hint,
+    detours: Array.isArray(g.detours) ? g.detours.filter(d => typeof d === 'string') : [],
+    fare: count(g.fare), tokens: count(g.tokens), spent: count(g.spent),
+    ms: Number.isFinite(g.ms) && g.ms > 0 ? g.ms : 0,
+    done: found.length === n, crossAt: Number.isInteger(g.crossAt) ? g.crossAt : -1, night: g.night === true,
+  };
+}
 const started = g => !!g && (g.done || g.found.length > 0 || g.detours.length > 0);
 
 // ---- the list ---------------------------------------------------------------------------------------------------

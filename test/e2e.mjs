@@ -186,6 +186,39 @@ const bar = await page.locator('#fare').boundingBox();
 assert.ok(small.width >= 240 && small.y + small.height <= bar.y + 1, 'the map should fit above the fare bar on a small phone');
 await page.setViewportSize({ width: 390, height: 844 });
 
+// A damaged save, or one from an older layout of a board, can't stop the page: the list still draws, and each
+// puzzle still opens and plays, keeping whatever could be read.
+{
+  const damaged = { options: {}, best: [], games: {
+    [PUZZLES[0].id]: { found: [0, 1, 99], detours: 'oops', fare: 'x', hint: { line: 1, level: 2 } },
+    [PUZZLES[1].id]: { found: null },
+    [PUZZLES[2].id]: { found: '01' },
+  } };
+  const other = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await other.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('crosstown.v1', s); sessionStorage.setItem('seeded', '1'); } }, JSON.stringify(damaged));
+  const tab = await other.newPage();
+  const errors = [];
+  tab.on('pageerror', e => errors.push(e.message));
+  await tab.goto(base);
+  assert.equal(await tab.locator('#route li').count(), PUZZLES.length, 'a damaged save should still list every puzzle');
+  assert.equal(await tab.textContent('#route li:nth-child(1) .row-sub'), `2 of ${PUZZLES[0].lines.length} lines found`);
+  await tab.click('#route li:nth-child(1) .row');
+  assert.equal(await tab.locator('#board .line').count(), 2, 'the line number the board does not have should be dropped');
+  await drag(tab, PUZZLES[0].lines[2]);
+  assert.equal(await tab.textContent('#count'), `3 of ${PUZZLES[0].lines.length} lines`);
+  await tab.click('#b-back');
+  for (const n of [1, 2]) {
+    await tab.click(`#route li:nth-child(${n + 1}) .row`);
+    await drag(tab, PUZZLES[n].lines[1]);
+    assert.equal(await tab.textContent('#count'), `1 of ${PUZZLES[n].lines.length} lines`);
+    await tab.click('#b-back');
+  }
+  await tab.reload();
+  assert.equal(await tab.textContent('#route li:nth-child(3) .row-sub'), `1 of ${PUZZLES[2].lines.length} lines found`);
+  assert.deepEqual(errors, [], 'errors with a damaged save');
+  await other.close();
+}
+
 // It can be installed.
 const cdp = await ctx.newCDPSession(page);
 const manifest = await cdp.send('Page.getAppManifest');
