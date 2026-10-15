@@ -180,12 +180,19 @@ const manifest = await cdp.send('Page.getAppManifest');
 assert.deepEqual(manifest.errors, []);
 assert.match(manifest.data, /"name": "Crosstown"/);
 
-// Works offline once it has been opened.
-await page.waitForFunction(() => navigator.serviceWorker?.controller, null, { timeout: 10000 }).catch(() => {});
-await ctx.setOffline(true);
-await page.reload();
+// Works offline once it has been opened: with the server dropping every connection, the page, its styles, its
+// font and the puzzles still load, from the copy the service worker kept.
+await page.waitForFunction(() => navigator.serviceWorker?.controller, null, { timeout: 20000 });
+server.down = true;
+await page.reload().catch(e => assert.fail(`the page did not load offline: ${e.message.split('\n')[0]}`));
 assert.equal(await page.locator('#route li').count(), PUZZLES.length, 'the page did not load offline');
-await ctx.setOffline(false);
+await page.click('#b-continue');
+assert.equal(await page.locator('#board .stop').count(), 48, 'a puzzle did not open offline');
+assert.deepEqual(await page.evaluate(async () => {
+  await document.fonts.ready;
+  return { styled: getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)', font: [...document.fonts].some(f => f.family.replace(/"/g, '') === 'Overpass' && f.status === 'loaded') };
+}), { styled: true, font: true }, 'the styles or the font did not load offline');
+server.down = false;
 
 assert.deepEqual(problems.filter(x => !x.startsWith('failed:')), [], 'problems while using it');
 await browser.close();
