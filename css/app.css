@@ -229,6 +229,7 @@ a { color: inherit; }
 .board .stop.hint .ring { opacity: 1; animation: turn 9s linear infinite; transform-box: fill-box; transform-origin: center; }
 .board .stop.first .ring { stroke-dasharray: none; stroke-width: .8; animation: none; }
 .board .stop.cursor .dot { stroke: var(--l2); stroke-width: .8; }
+.board .stop.cursor.c2 .dot { stroke: var(--ink); }   /* the blue line's own stops would hide a blue ring */
 @keyframes turn { to { transform: rotate(360deg); } }
 .board .line { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.7; }
 .board .line.c0 { stroke: var(--cross); stroke-width: 3.9; }

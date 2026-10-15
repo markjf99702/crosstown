@@ -122,6 +122,16 @@ for (const stop of p.lines[3]) { await walk(stop); await page.keyboard.press('En
 await page.keyboard.press('Enter');
 assert.equal(await text('#count'), `3 of ${p.lines.length} lines`);
 
+// The cursor shows on every stop, the blue line's own included.
+await walk(p.lines[2][0]);
+const ring = await page.evaluate(async () => {
+  const dot = document.querySelector('#board .stop.cursor .dot');
+  await Promise.all(dot.getAnimations().map(a => a.finished));   // the colours fade in; read them once they've settled
+  const s = getComputedStyle(dot);
+  return { blue: dot.parentNode.classList.contains('c2'), stroke: s.stroke, fill: s.fill };
+});
+assert.ok(ring.blue && ring.stroke !== ring.fill, `the cursor should show on a blue-line stop: ${JSON.stringify(ring)}`);
+
 // An open sheet starts on its main button, keeps the keyboard inside it, and hands focus back when it closes.
 const focused = () => page.evaluate(() => document.activeElement.id || document.activeElement.textContent.trim());
 await page.focus('#b-menu');
