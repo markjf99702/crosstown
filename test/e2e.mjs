@@ -104,7 +104,11 @@ assert.equal(await text('#count'), `2 of ${p.lines.length} lines`);
 assert.equal(await page.locator('#board .line').count(), 2);
 assert.equal(await page.locator('#board .guide').count(), 1);
 
-// With the keyboard: walk to a line's first stop and press Enter along it.
+// With the keyboard: Tab to the map, which shows it has focus, then walk to a line's first stop and press Enter
+// along it.
+await page.focus('#b-menu');
+await page.keyboard.press('Tab');
+assert.deepEqual(await page.evaluate(() => [document.activeElement.id, getComputedStyle(document.activeElement).outlineStyle]), ['board', 'solid'], 'the map should show keyboard focus');
 await page.focus('#board');
 const walk = async to => {
   let at = await page.evaluate(() => [...document.querySelectorAll('#board .stop')].findIndex(s => s.classList.contains('cursor')));

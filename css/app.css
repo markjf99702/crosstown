@@ -213,7 +213,7 @@ a { color: inherit; }
 
 .board-wrap { flex: 1; min-height: 0; container-type: size; display: grid; place-items: center; }
 .board { width: min(100cqw, 75cqh); aspect-ratio: 6 / 8; display: block; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 8px; }
-.board:focus { outline: none; }
+.board:focus:not(:focus-visible) { outline: none; }
 .board .dot { fill: var(--stop); stroke: var(--stop-edge); stroke-width: .34; transition: fill .18s, stroke .18s; }
 .board text { font: 750 4.7px var(--font); fill: var(--ink); text-anchor: middle; pointer-events: none; transition: fill .18s; }
 .board .stop.sel .dot { fill: var(--select); stroke: var(--select); }
