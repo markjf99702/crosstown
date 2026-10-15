@@ -216,6 +216,8 @@ function stopAt(e, reach) {
   return Math.hypot(x - c - 0.5, y - r - 0.5) <= reach ? r * W + c : -1;
 }
 const taken = i => cur.game.found.includes(cur.lineOf[i]);
+// A stop on a finished line just tells you which line it is, whether you tap it or press Enter on it.
+const nameLine = i => { const k = cur.lineOf[i]; say(k ? cur.words[k] : `Crosstown: ${cur.p.name}`, k ? '' : 'note', k); };
 
 board.addEventListener('pointerdown', e => {
   if (!cur || e.button > 0) return;
@@ -223,8 +225,7 @@ board.addEventListener('pointerdown', e => {
   if (i < 0) return;
   e.preventDefault();
   cursor = -1;
-  // A stop on a finished line just tells you which line it is.
-  if (taken(i)) { sel = []; say(cur.lineOf[i] ? cur.words[cur.lineOf[i]] : `Crosstown: ${cur.p.name}`, cur.lineOf[i] ? '' : 'note', cur.lineOf[i]); paint(); return; }
+  if (taken(i)) { sel = []; nameLine(i); paint(); return; }
   if (cur.game.done) return;
   board.setPointerCapture?.(e.pointerId);
   drag = { changed: false, tapLast: false };
@@ -253,8 +254,9 @@ const lift = () => {
 board.addEventListener('pointerup', lift);
 board.addEventListener('pointercancel', () => { drag = null; });
 
+// On a finished map every stop is on a found line, so the arrows and Enter only name lines there, as a tap does.
 board.addEventListener('keydown', e => {
-  if (!cur || cur.game.done) return;
+  if (!cur) return;
   const step = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[e.key];
   if (step) {
     if (cursor < 0) cursor = sel.length ? sel[sel.length - 1] : 0;
@@ -262,13 +264,13 @@ board.addEventListener('keydown', e => {
   } else if (e.key === 'Enter' || e.key === ' ') {
     if (cursor < 0) return;
     const at = sel.indexOf(cursor);
-    if (taken(cursor)) say(cur.words[cur.lineOf[cursor]], '', cur.lineOf[cursor]);
+    if (taken(cursor)) nameLine(cursor);
     else if (at >= 0 && at === sel.length - 1) { e.preventDefault(); submit(); return; }
     else if (at >= 0) sel = sel.slice(0, at + 1);
     else if (sel.length && adjacent(sel[sel.length - 1], cursor)) sel.push(cursor);
     else sel = [cursor];
     if (!taken(cursor)) showTrace();
-  } else if (e.key === 'Escape' || e.key === 'Backspace') {
+  } else if ((e.key === 'Escape' || e.key === 'Backspace') && !cur.game.done) {
     if (e.key === 'Backspace') sel.pop(); else sel = [];
     showTrace();
   } else return;

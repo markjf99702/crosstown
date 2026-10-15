@@ -110,13 +110,13 @@ await page.focus('#b-menu');
 await page.keyboard.press('Tab');
 assert.deepEqual(await page.evaluate(() => [document.activeElement.id, getComputedStyle(document.activeElement).outlineStyle]), ['board', 'solid'], 'the map should show keyboard focus');
 await page.focus('#board');
-const walk = async to => {
-  let at = await page.evaluate(() => [...document.querySelectorAll('#board .stop')].findIndex(s => s.classList.contains('cursor')));
-  if (at < 0) { await page.keyboard.press('ArrowRight'); at = 0; }
-  for (; at % 6 < to % 6; at++) await page.keyboard.press('ArrowRight');
-  for (; at % 6 > to % 6; at--) await page.keyboard.press('ArrowLeft');
-  for (; at < to; at += 6) await page.keyboard.press('ArrowDown');
-  for (; at > to; at -= 6) await page.keyboard.press('ArrowUp');
+const walk = async (to, on = page) => {
+  let at = await on.evaluate(() => [...document.querySelectorAll('#board .stop')].findIndex(s => s.classList.contains('cursor')));
+  if (at < 0) { await on.keyboard.press('ArrowRight'); at = 0; }
+  for (; at % 6 < to % 6; at++) await on.keyboard.press('ArrowRight');
+  for (; at % 6 > to % 6; at--) await on.keyboard.press('ArrowLeft');
+  for (; at < to; at += 6) await on.keyboard.press('ArrowDown');
+  for (; at > to; at -= 6) await on.keyboard.press('ArrowUp');
 };
 for (const stop of p.lines[3]) { await walk(stop); await page.keyboard.press('Enter'); }
 await page.keyboard.press('Enter');
@@ -237,6 +237,17 @@ const finished = q => ({ found: q.lines.map((_, k) => k), detours: [], spent: 0,
   await tab.waitForSelector('#sheet-done:not([hidden])');
   assert.equal(await tab.isHidden('#b-done-next'), true);
   assert.equal(await tab.evaluate(() => document.activeElement.id), 'b-share', 'the last done sheet should start on Share');
+
+  // On the finished map the arrows and Enter name the lines, the same as tapping a stop.
+  await tab.keyboard.press('Escape');
+  await tab.focus('#board');
+  const named = i => { const k = last.lines.findIndex(l => l.includes(i)); return k ? spell(last.grid, last.lines[k]) : `Crosstown: ${last.name}`; };
+  for (const stop of [last.lines[1][0], last.lines[0][0]]) {
+    await walk(stop, tab);
+    await tab.keyboard.press('Enter');
+    assert.equal(await tab.textContent('#readout'), named(stop), 'Enter on a finished map should name the line');
+  }
+  assert.equal(await tab.locator('#board .stop.cursor').count(), 1);
   assert.deepEqual(errors, []);
   await other.close();
 }
