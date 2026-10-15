@@ -293,6 +293,23 @@ function contrast(a, b) {
   await other.close();
 }
 
+// On narrow phones (many Androids are 360 wide) the button labels stay on one line, on the list and in a puzzle.
+for (const [width, height] of [[360, 780], [320, 568]]) {
+  const games = Object.fromEntries(PUZZLES.slice(0, 11).map(q => [q.id, finished(q)]));
+  games[PUZZLES[11].id] = { found: [1], detours: [], tokens: 12, fare: 2 };
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games }, { viewport: { width, height } });
+  const oneLine = ids => tab.evaluate(([ids, width]) => ids.filter(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.height > 44.5 || r.right > width - 15.5; }), [ids, width]);
+  const row = ['b-continue', 'b-how', 'b-list-menu'];
+  assert.equal(await tab.textContent('#b-continue'), 'Resume No. 12');
+  assert.deepEqual(await oneLine(row), [], `list buttons that wrap or stick out at ${width}px`);
+  if (width >= 360) assert.equal(await tab.evaluate(ids => new Set(ids.map(id => Math.round(document.getElementById(id).getBoundingClientRect().top))).size, row), 1, 'the list buttons should share a row');
+  await tab.click('#b-continue');
+  assert.equal(await tab.textContent('#token-label'), 'Use a token (12)');
+  assert.deepEqual(await oneLine(['b-token']), [], `the token button wraps or sticks out at ${width}px`);
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // A damaged save, or one from an older layout of a board, can't stop the page: the list still draws, and each
 // puzzle still opens and plays, keeping whatever could be read.
 {
