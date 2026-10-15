@@ -340,12 +340,14 @@ let opener = null;
 function openSheet(id) {
   opener = document.activeElement;
   if (cur) { stopClock(); }
+  $('app').inert = true;   // the page behind stays out of reach of Tab and screen readers until the sheet closes
   $(id).hidden = false;
   $(id).querySelector('.panel').focus?.();
   $(id).querySelector('.btn.primary, .btn')?.focus({ preventScroll: true });
 }
 function closeSheets() {
   for (const s of document.querySelectorAll('.sheet')) s.hidden = true;
+  $('app').inert = false;
   $('share-text').hidden = true;
   armed = null; $('m-restart').textContent = 'Start this puzzle over'; $('m-erase').textContent = 'Erase all progress';
   if (cur) startClock();

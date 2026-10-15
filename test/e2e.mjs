@@ -118,6 +118,16 @@ for (const stop of p.lines[3]) { await walk(stop); await page.keyboard.press('En
 await page.keyboard.press('Enter');
 assert.equal(await text('#count'), `3 of ${p.lines.length} lines`);
 
+// An open sheet keeps the keyboard inside it, and hands focus back when it closes.
+await page.focus('#b-menu');
+await page.keyboard.press('Enter');
+for (let k = 0; k < 12; k++) {
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.getElementById('app').contains(document.activeElement)), false, 'Tab reached the page behind a sheet');
+}
+await page.keyboard.press('Escape');
+assert.equal(await page.evaluate(() => document.activeElement.id), 'b-menu');
+
 // Finish it. The Crosstown wasn't first and tokens were spent, so one star.
 for (const k of [0, 1, 5, 6].filter(k => k < p.lines.length)) await drag(page, p.lines[k]);
 for (let k = 7; k < p.lines.length; k++) await drag(page, p.lines[k]);
