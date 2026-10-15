@@ -343,7 +343,8 @@ function openSheet(id) {
   $('app').inert = true;   // the page behind stays out of reach of Tab and screen readers until the sheet closes
   $(id).hidden = false;
   $(id).querySelector('.panel').focus?.();
-  $(id).querySelector('.btn.primary, .btn')?.focus({ preventScroll: true });
+  // The main button if it's showing (Next puzzle, Done, Got it), otherwise the first one that is.
+  ($(id).querySelector('.btn.primary:not([hidden])') || $(id).querySelector('.btn:not([hidden])'))?.focus({ preventScroll: true });
 }
 function closeSheets() {
   for (const s of document.querySelectorAll('.sheet')) s.hidden = true;

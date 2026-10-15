@@ -118,9 +118,11 @@ for (const stop of p.lines[3]) { await walk(stop); await page.keyboard.press('En
 await page.keyboard.press('Enter');
 assert.equal(await text('#count'), `3 of ${p.lines.length} lines`);
 
-// An open sheet keeps the keyboard inside it, and hands focus back when it closes.
+// An open sheet starts on its main button, keeps the keyboard inside it, and hands focus back when it closes.
+const focused = () => page.evaluate(() => document.activeElement.id || document.activeElement.textContent.trim());
 await page.focus('#b-menu');
 await page.keyboard.press('Enter');
+assert.equal(await focused(), 'Done');
 for (let k = 0; k < 12; k++) {
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.getElementById('app').contains(document.activeElement)), false, 'Tab reached the page behind a sheet');
@@ -132,6 +134,7 @@ assert.equal(await page.evaluate(() => document.activeElement.id), 'b-menu');
 for (const k of [0, 1, 5, 6].filter(k => k < p.lines.length)) await drag(page, p.lines[k]);
 for (let k = 7; k < p.lines.length; k++) await drag(page, p.lines[k]);
 await page.waitForSelector('#sheet-done:not([hidden])');
+assert.equal(await focused(), 'b-done-next', 'the done sheet should start on Next puzzle');
 assert.equal(await text('#done-title'), p.name);
 assert.equal(await page.locator('#done-stars .got').count(), 1);
 assert.equal(await page.locator('#done-key li').count(), p.lines.length);
@@ -196,6 +199,34 @@ const bar = await page.locator('#fare').boundingBox();
 assert.ok(small.width >= 240 && small.y + small.height <= bar.y + 1, 'the map should fit above the fare bar on a small phone');
 await page.setViewportSize({ width: 390, height: 844 });
 
+// Another visitor, arriving with `state` already saved, for the checks that need a particular save.
+async function visitor(state, options = {}) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, ...options });
+  await context.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('crosstown.v1', s); sessionStorage.setItem('seeded', '1'); } }, JSON.stringify(state));
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on('pageerror', e => errors.push(e.message));
+  await tab.goto(base);
+  await tab.evaluate(() => document.fonts.ready);
+  return { other: context, tab, errors };
+}
+const finished = q => ({ found: q.lines.map((_, k) => k), detours: [], spent: 0, done: true, crossAt: 0 });
+
+// The last puzzle has no next one, so its done sheet starts on Share instead.
+{
+  const last = PUZZLES.at(-1);
+  const games = Object.fromEntries(PUZZLES.slice(0, -1).map(q => [q.id, finished(q)]));
+  games[last.id] = { found: last.lines.map((_, k) => k).slice(1), detours: [] };
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games });
+  await tab.click('#b-continue');
+  await drag(tab, last.lines[0]);
+  await tab.waitForSelector('#sheet-done:not([hidden])');
+  assert.equal(await tab.isHidden('#b-done-next'), true);
+  assert.equal(await tab.evaluate(() => document.activeElement.id), 'b-share', 'the last done sheet should start on Share');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // A damaged save, or one from an older layout of a board, can't stop the page: the list still draws, and each
 // puzzle still opens and plays, keeping whatever could be read.
 {
@@ -204,12 +235,7 @@ await page.setViewportSize({ width: 390, height: 844 });
     [PUZZLES[1].id]: { found: null },
     [PUZZLES[2].id]: { found: '01' },
   } };
-  const other = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await other.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('crosstown.v1', s); sessionStorage.setItem('seeded', '1'); } }, JSON.stringify(damaged));
-  const tab = await other.newPage();
-  const errors = [];
-  tab.on('pageerror', e => errors.push(e.message));
-  await tab.goto(base);
+  const { other, tab, errors } = await visitor(damaged);
   assert.equal(await tab.locator('#route li').count(), PUZZLES.length, 'a damaged save should still list every puzzle');
   assert.equal(await tab.textContent('#route li:nth-child(1) .row-sub'), `2 of ${PUZZLES[0].lines.length} lines found`);
   await tab.click('#route li:nth-child(1) .row');
