@@ -182,6 +182,7 @@ a { color: inherit; }
 .done .roundel { background: var(--cross); border-color: var(--cross); color: var(--on-cross); }
 .row-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .row-clue { font-weight: 700; font-size: 17px; line-height: 1.25; }
+.row-clue.dark-hours { font-weight: 600; color: var(--muted); }
 .row-sub { color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .row-sub .st { color: var(--star); letter-spacing: 1px; }
 .row-go { color: var(--muted); font-size: 13.5px; font-weight: 700; }

@@ -151,6 +151,18 @@ assert.equal(await text('#tally'), `1 of ${PUZZLES.length} finished, 1 of ${PUZZ
 assert.equal(await page.locator('#route li.done').count(), 1);
 assert.equal(await page.locator('#route li.going').count(), 1);
 
+// Night service keeps the clues off the list too, except where a line has been found.
+assert.equal(await text('#route li:nth-child(1) .row-clue'), PUZZLES[0].clue);
+assert.equal(await text('#route li:nth-child(2) .row-clue'), PUZZLES[1].clue);
+assert.equal(await text('#route li:nth-child(3) .row-clue'), 'Night service');
+assert.equal(await page.locator('#route .row-clue', { hasText: PUZZLES[2].clue }).count(), 0, 'a hidden clue is on the list');
+await page.click('#b-list-menu');
+await page.uncheck('#o-night');
+assert.equal(await text('#route li:nth-child(3) .row-clue'), PUZZLES[2].clue, 'turning night service off should show the clues');
+await page.check('#o-night');
+await page.click('#sheet-menu .panel-row [data-close]');
+assert.equal(await text('#route li:nth-child(3) .row-clue'), 'Night service');
+
 // Starting a puzzle over takes two taps.
 await page.click('#route li:nth-child(2) .row');
 await page.click('#b-menu');

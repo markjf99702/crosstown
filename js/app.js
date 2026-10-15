@@ -52,7 +52,9 @@ function drawList() {
     } else {
       sub.textContent = `${p.lines.length} lines`;
     }
-    const clue = document.createElement('span'); clue.className = 'row-clue'; clue.textContent = p.clue;
+    // Night service keeps the clue off the list too, the same as on the sign, until a line is found.
+    const dark = saved.options.night && !g?.done && !g?.found.length;
+    const clue = document.createElement('span'); clue.className = 'row-clue' + (dark ? ' dark-hours' : ''); clue.textContent = dark ? 'Night service' : p.clue;
     const main = document.createElement('span'); main.className = 'row-main'; main.append(clue, sub);
     const num = document.createElement('span'); num.className = 'roundel'; num.textContent = i + 1;
     const go = document.createElement('span'); go.className = 'row-go'; go.setAttribute('aria-hidden', 'true');
@@ -342,7 +344,7 @@ $('b-list-menu').addEventListener('click', openMenu);
 $('b-how').addEventListener('click', () => openSheet('sheet-how'));
 $('m-how').addEventListener('click', () => { closeSheets(); openSheet('sheet-how'); });
 $('o-clock').addEventListener('change', e => { saved.options.clock = e.target.checked; save(); if (cur) $('clock').hidden = !e.target.checked; else drawList(); });
-$('o-night').addEventListener('change', e => { saved.options.night = e.target.checked; save(); if (cur) paint(); });
+$('o-night').addEventListener('change', e => { saved.options.night = e.target.checked; save(); if (cur) paint(); else drawList(); });
 
 // The page can't show a confirm box everywhere it runs, so the button asks for a second tap instead.
 let armed = null;
