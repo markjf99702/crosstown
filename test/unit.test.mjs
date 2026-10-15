@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { W, H, N, row, col, adjacent, diagonalSquare, spell, spans, traces } from '../js/board.js';
 import { PUZZLES } from '../js/puzzles.js';
 import { THEMES } from '../tools/themes.mjs';
+import { isRude } from '../tools/rude-words.mjs';
 import { fareFor, FARE_PER_TOKEN, starsFor } from '../js/rules.js';
 
 test('the pack matches the themes, in order, with no repeats', () => {
@@ -57,7 +58,7 @@ for (const p of PUZZLES) {
     });
   });
 
-  test(`${p.id}: detours are real finds and none is an answer`, () => {
+  test(`${p.id}: detours are real finds, none is an answer, and none is rude`, () => {
     const list = p.detours.split(' ');
     assert.ok(list.length >= 100, 'too few detours to earn a token');
     assert.equal(new Set(list).size, list.length);
@@ -65,10 +66,16 @@ for (const p of PUZZLES) {
     for (const d of list) {
       assert.match(d, /^[a-z]{4,}$/);
       assert.ok(!answers.has(d));
+      assert.ok(!isRude(d), `${d} shouldn't earn fare`);
       assert.ok(traces(p.grid, d.toUpperCase(), 1).length, `${d} isn't on the board`);
     }
   });
 }
+
+test('rude words stay out with -s, -es, -d or -ed on the end, and plain words that only look like them stay in', () => {
+  for (const w of ['clits', 'boners', 'nudes', 'orgies', 'arsed', 'asses']) assert.ok(isRude(w), `${w} should stay out`);
+  for (const w of ['spices', 'spiced', 'crapes', 'classes', 'passed', 'stories', 'clocks']) assert.ok(!isRude(w), `${w} should count`);
+});
 
 test('fare and stars', () => {
   assert.equal(fareFor('tape'), 1);

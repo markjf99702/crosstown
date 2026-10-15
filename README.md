@@ -52,6 +52,7 @@ To put it online with GitHub Pages: **Settings → Pages → Build and deploymen
 - `js/rules.js`: fare, stars and the clock's arithmetic.
 - `js/puzzles.js`: the boards, written by `tools/make-puzzles.mjs`. Don't edit it by hand.
 - `tools/themes.mjs`: where every puzzle starts.
+- `tools/rude-words.mjs`: words that never count as detours, plurals and past tenses included, shared by the puzzle tool and the tests.
 - `tools/play.mjs`: a small static server and the hands that drag and tap for the tests and screenshots.
 - `test/unit.test.mjs`, `test/e2e.mjs`: the puzzle checks and the play-through.
 - `fonts/`: Overpass (SIL Open Font License), served from here so nothing loads from elsewhere.

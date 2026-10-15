@@ -8,6 +8,7 @@ import { createRequire } from 'node:module';
 import { writeFile } from 'node:fs/promises';
 import { W, H, N, row, col, NEIGHBORS, diagonalSquare, spell, traces } from '../js/board.js';
 import { THEMES } from './themes.mjs';
+import { isRude } from './rude-words.mjs';
 
 const require = createRequire(import.meta.url);
 const MIN = 4;                    // shortest word that counts, theme or detour
@@ -15,23 +16,11 @@ const LAYOUTS = 1500;             // layouts to compare per word set
 const SETS = 6;                   // word sets to try per theme
 
 // ---- the dictionary -------------------------------------------------------------------------------------------
-// SCOWL (via wordlist-english), every dialect, minus anything on a list of words nobody wants to be told they found.
+// SCOWL (via wordlist-english), every dialect, minus the words nobody wants to be told they found (tools/rude-words.mjs).
 const lists = require('wordlist-english');
-const rude = new Set(require('naughty-words').en.map(w => w.toLowerCase()));
-// That list misses plurals and a few slurs, so these catch the rest. Erring wide is fine: a word left out here
-// just doesn't earn fare.
-const RUDE = new RegExp([
-  'fuck', 'shit', 'piss', 'cunt', 'penis', 'vagina', 'slut', 'whore', 'bitch', 'wank', 'twat', 'dildo', 'semen', 'jizz',
-  'porn', 'nazi', 'nigger', 'nigga', 'faggot', 'redskin', 'darkie', 'darky', 'sambo', 'honky', 'honkie', 'tranny',
-  'mongoloid', 'lesbo', 'skank', 'molest', 'incest', 'pedophil', 'paedophil', 'gypsy', 'gypsies', 'cocksuck',
-  '^cocks?$', '^dick(s|ed|head.*)?$', '^puss(y|ies)$', '^anus(es)?$', '^anal$', '^rap(e|ed|es|er|ers|ing|ist|ists)$',
-  '^tit(s|ty|ties)$', '^cum(s|ming)?$', '^nigs?$', '^fags?$', '^kikes?$', '^spics?$', '^chink(s|y)?$', '^gooks?$',
-  '^wops?$', '^dago(s|es)?$', '^coons?$', '^japs?$', '^pakis?$', '^retard(s|ed)?$', '^spaz.*', '^dykes?$', '^homos?$',
-  '^gyp(s|ped|ping)?$', '^krauts?$', '^arse(s|hole.*)?$', '^turds?$', '^craps?$', '^crapp.*',
-].join('|'));
 const DICT = new Set();
 for (const key of ['english', 'english/american', 'english/british', 'english/canadian', 'english/australian']) {
-  for (const w of lists[key]) if (/^[a-z]{4,14}$/.test(w) && !rude.has(w) && !RUDE.test(w)) DICT.add(w.toUpperCase());
+  for (const w of lists[key]) if (/^[a-z]{4,14}$/.test(w) && !isRude(w)) DICT.add(w.toUpperCase());
 }
 const trie = { kids: new Map(), end: false };
 for (const w of DICT) {
