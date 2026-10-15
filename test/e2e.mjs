@@ -273,6 +273,26 @@ function contrast(a, b) {
   await other.close();
 }
 
+// With one line left and its route already drawn, a token has nothing to do, so the button is off. With only its
+// stops ringed, a token can still draw the route.
+{
+  const lastLine = p.lines.length - 1;
+  const nearly = hint => ({ options: {}, best: {}, games: { [p.id]: { found: p.lines.map((_, k) => k).slice(0, -1), detours: [], hint, tokens: 1, spent: 1 } } });
+  const { other, tab, errors } = await visitor(nearly({ line: lastLine, level: 2 }));
+  await tab.click('#b-continue');
+  assert.equal(await tab.locator('#board .guide').count(), 1);
+  assert.equal(await tab.isDisabled('#b-token'), true, 'a token with nothing to do should be off');
+  await tab.click('#b-back');   // leaving saves the open puzzle, so leave before writing a different save
+  await tab.evaluate(s => localStorage.setItem('crosstown.v1', s), JSON.stringify(nearly({ line: lastLine, level: 1 })));
+  await tab.reload();
+  await tab.click('#b-continue');
+  assert.equal(await tab.isDisabled('#b-token'), false);
+  await tab.click('#b-token');
+  assert.equal(await tab.locator('#board .guide').count(), 1, 'the token should draw the last line\'s route');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // A damaged save, or one from an older layout of a board, can't stop the page: the list still draws, and each
 // puzzle still opens and plays, keeping whatever could be read.
 {

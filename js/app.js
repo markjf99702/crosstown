@@ -145,7 +145,7 @@ function paint() {
   for (let n = 0; n < FARE_PER_TOKEN; n++) { const pip = document.createElement('i'); if (n < game.fare) pip.className = 'full'; pips.append(pip); }
   $('meter').setAttribute('aria-label', `Fare: ${game.fare} of ${FARE_PER_TOKEN}`);
   const tok = $('b-token');
-  tok.disabled = !game.tokens || !left;
+  tok.disabled = !game.tokens || !left || (game.hint?.level !== 1 && nextHint(game, p) === undefined);
   tok.classList.toggle('ready', !tok.disabled);
   $('token-label').textContent = game.tokens ? `Use a token (${game.tokens})` : 'No tokens';
   $('fare').hidden = game.done; $('after').hidden = !game.done;
@@ -319,14 +319,19 @@ function found(k) {
   keep(); paint();
 }
 
+// The line a new token would ring: any ordinary line first, the Crosstown only once it's the last one left.
+// None when the only line left is the one whose route is already drawn.
+function nextHint(game, p) {
+  const open = p.lines.map((_, k) => k).filter(k => !game.found.includes(k) && k !== game.hint?.line);
+  return open.find(k => k !== 0) ?? open[0];
+}
+
 $('b-token').addEventListener('click', () => {
   const { p, game } = cur;
   if (!game.tokens || game.done) return;
   if (game.hint && game.hint.level === 1) { game.hint.level = 2; say('The dashed route starts at the solid ring', 'note'); }
   else {
-    // Any ordinary line first; the Crosstown only once it's the last one left.
-    const open = p.lines.map((_, k) => k).filter(k => !game.found.includes(k) && k !== game.hint?.line);
-    const pick = open.find(k => k !== 0) ?? open[0];
+    const pick = nextHint(game, p);
     if (pick === undefined) return;
     game.hint = { line: pick, level: 1 };
     say(`${p.lines[pick].length} ringed stops make a line`, 'note');
