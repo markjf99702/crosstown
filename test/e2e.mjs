@@ -385,6 +385,8 @@ const cdp = await ctx.newCDPSession(page);
 const manifest = await cdp.send('Page.getAppManifest');
 assert.deepEqual(manifest.errors, []);
 assert.match(manifest.data, /"name": "Crosstown"/);
+// Installed, it stays upright: held sideways, a phone would leave the map about 144 px wide.
+assert.equal(JSON.parse(manifest.data).orientation, 'portrait', 'the installed app should stay in portrait');
 
 // Works offline once it has been opened: with the server dropping every connection, the page, its styles, its
 // font and the puzzles still load, from the copy the service worker kept.
