@@ -207,7 +207,8 @@ a { color: inherit; }
 .sign-count { font-size: 13.5px; font-weight: 700; color: var(--sign-muted); font-variant-numeric: tabular-nums; white-space: nowrap; padding-bottom: 2px; }
 
 .readout { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: 20px; letter-spacing: .08em; text-transform: uppercase; text-align: center; }
-.readout.note { font-size: 15px; letter-spacing: .02em; text-transform: none; font-weight: 700; color: var(--muted); }
+/* Tight lines, so a note that wraps on a small phone still fits the readout's height and the map doesn't jump. */
+.readout.note { font-size: 15px; line-height: 1.1; letter-spacing: .02em; text-transform: none; font-weight: 700; color: var(--muted); }
 .readout .chip { width: 14px; height: 14px; border-radius: 50%; flex: none; margin-bottom: 3px; }
 .readout.nope { animation: nope .32s; }
 @keyframes nope { 20% { transform: translateX(-7px); } 50% { transform: translateX(6px); } 80% { transform: translateX(-3px); } }

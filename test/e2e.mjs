@@ -352,6 +352,22 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await other.close();
 }
 
+// On a small phone a note that wraps onto a second line still fits the readout's height, so the map stays put.
+{
+  const longest = p.detours.split(' ').reduce((a, b) => (b.length > a.length ? b : a));
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: { [p.id]: { found: [], detours: [], fare: 3 } } }, { viewport: { width: 320, height: 568 } });
+  await tab.click('#b-continue');
+  const top = async () => (await tab.locator('#board').boundingBox()).y;
+  const before = await top();
+  await drag(tab, traces(p.grid, longest.toUpperCase(), 1)[0]);
+  assert.match(await tab.textContent('#readout'), /Token earned$/);
+  const lines = await tab.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.getElementById('readout')); return new Set([...r.getClientRects()].map(x => Math.round(x.top))).size; });
+  assert.equal(lines, 2, `this check needs a note long enough to wrap at 320 px: ${await tab.textContent('#readout')}`);
+  assert.equal(await top(), before, 'the map moved down when a note wrapped onto two lines');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // A damaged save, or one from an older layout of a board, can't stop the page: the list still draws, and each
 // puzzle still opens and plays, keeping whatever could be read.
 {
