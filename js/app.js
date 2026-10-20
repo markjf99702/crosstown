@@ -144,8 +144,11 @@ function paint() {
   const pips = $('pips'); pips.textContent = '';
   for (let n = 0; n < FARE_PER_TOKEN; n++) { const pip = document.createElement('i'); if (n < game.fare) pip.className = 'full'; pips.append(pip); }
   $('meter').setAttribute('aria-label', `Fare: ${game.fare} of ${FARE_PER_TOKEN}`);
+  // A token rings a line's stops, then draws its route. While a route shows on a line not yet found the button is
+  // off: the route already gives the line away, and another token would ring a different line and lose it.
   const tok = $('b-token');
-  tok.disabled = !game.tokens || !left || (game.hint?.level !== 1 && nextHint(game, p) === undefined);
+  const routeShowing = game.hint?.level === 2 && !found.has(game.hint.line);
+  tok.disabled = !game.tokens || !left || routeShowing;
   tok.classList.toggle('ready', !tok.disabled);
   $('token-label').textContent = game.tokens ? `Use a token (${game.tokens})` : 'No tokens';
   $('fare').hidden = game.done; $('after').hidden = !game.done;

@@ -301,6 +301,22 @@ function contrast(a, b) {
   await other.close();
 }
 
+// While a route shows on a line not yet found, the token button stays off, even with tokens and other lines left:
+// another token would ring a different line and lose the route. Tracing that line turns it back on.
+{
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: { [p.id]: { found: [], detours: [], hint: { line: 1, level: 2 }, tokens: 2, spent: 2 } } });
+  await tab.click('#b-continue');
+  assert.equal(await tab.locator('#board .guide').count(), 1);
+  assert.equal(await tab.isDisabled('#b-token'), true, 'a token while a route is showing would lose the route');
+  await drag(tab, p.lines[1]);
+  assert.equal(await tab.locator('#board .guide').count(), 0);
+  assert.equal(await tab.isDisabled('#b-token'), false, 'once the route is traced, a token should work again');
+  await tab.click('#b-token');
+  assert.ok(await tab.locator('#board .stop.hint').count() > 0, 'the next token should ring another line');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // Tapping the first letters of a word and then dragging on from the last one carries the same word on.
 {
   const { other, tab, errors } = await visitor({ options: {}, best: {}, games: {} });
