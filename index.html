@@ -143,7 +143,10 @@
       <p class="done-stats" id="done-stats"></p>
       <h3 class="key-title">Key to lines</h3>
       <ul class="key" id="done-key"></ul>
-      <textarea class="share-text" id="share-text" rows="3" readonly hidden aria-label="Result to share"></textarea>
+      <div class="share-box" id="share-box" hidden>
+        <label class="share-label" for="share-text">Select the text and copy it</label>
+        <textarea class="share-text" id="share-text" rows="3" readonly></textarea>
+      </div>
       <div class="panel-row">
         <button type="button" class="btn" id="b-share">Share</button>
         <button type="button" class="btn" data-close>See the map</button>

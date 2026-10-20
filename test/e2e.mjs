@@ -163,8 +163,9 @@ assert.equal(await page.locator('#board .stop.on').count(), 48);
 
 // Sharing falls back to the clipboard, or to text you can select.
 await page.click('#b-share');
-await page.waitForSelector('#toast:not([hidden])', { timeout: 5000 });
-assert.match(await text('#toast'), /copied|Select the text/);
+await page.waitForSelector('#toast:not([hidden]), #share-box:not([hidden])', { timeout: 5000 });
+if (await page.isVisible('#toast')) assert.equal(await text('#toast'), 'Result copied');
+else assert.match(await page.inputValue('#share-text'), /^Crosstown No. 1 /);
 
 // On to the next one, with night service on: the clue stays hidden until the first line.
 await page.click('#b-done-next');
@@ -348,6 +349,39 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await tab.click('#b-continue');
   assert.equal(await tab.textContent('#token-label'), 'Use a token (12)');
   assert.deepEqual(await oneLine(['b-token']), [], `the token button wraps or sticks out at ${width}px`);
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
+// Where the clipboard can't be used, Share puts the result in a box to copy by hand, with what to do in a label just
+// above it, not in a toast on top of it. Where it can, a toast says the result was copied.
+{
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: { [p.id]: { found: p.lines.map((_, k) => k).slice(1), detours: [] } } });
+  await tab.click('#b-continue');
+  await drag(tab, p.lines[0]);
+  await tab.waitForSelector('#sheet-done:not([hidden])');
+  const clipboard = works => tab.evaluate(works => {
+    Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
+    navigator.clipboard.writeText = () => (works ? Promise.resolve() : Promise.reject(new DOMException('Write permission denied.', 'NotAllowedError')));
+  }, works);
+  await clipboard(false);
+  await tab.click('#b-share');
+  await tab.waitForSelector('#share-box:not([hidden])', { timeout: 5000 });
+  const shown = await tab.evaluate(() => {
+    const box = document.getElementById('share-text'), label = box.labels[0];
+    return { toast: !document.getElementById('toast').hidden, label: label?.textContent, gap: box.getBoundingClientRect().top - label?.getBoundingClientRect().bottom, focused: document.activeElement === box, value: box.value, selected: box.selectionEnd - box.selectionStart };
+  });
+  assert.equal(shown.toast, false, 'a toast would cover the text to copy');
+  assert.ok(shown.label === 'Select the text and copy it' && shown.gap >= 0 && shown.gap < 12, `the instruction should sit just above the box: ${JSON.stringify(shown)}`);
+  assert.ok(shown.focused && shown.value.startsWith('Crosstown No. 1 ') && shown.selected === shown.value.length, `the result should be in the box, selected: ${JSON.stringify(shown)}`);
+  await tab.keyboard.press('Escape');
+  await tab.click('#b-results');
+  assert.equal(await tab.isHidden('#share-box'), true, 'the box should go when the sheet closes');
+  await clipboard(true);
+  await tab.click('#b-share');
+  await tab.waitForSelector('#toast:not([hidden])', { timeout: 5000 });
+  assert.equal(await tab.textContent('#toast'), 'Result copied');
+  assert.equal(await tab.isHidden('#share-box'), true);
   assert.deepEqual(errors, []);
   await other.close();
 }

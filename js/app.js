@@ -365,7 +365,7 @@ function closeSheets() {
   for (const s of document.querySelectorAll('.sheet')) s.hidden = true;
   $('app').inert = false;
   board.classList.remove('paused');
-  $('share-text').hidden = true;
+  $('share-box').hidden = true;
   armed = null; $('m-restart').textContent = 'Start this puzzle over'; $('m-erase').textContent = 'Erase all progress';
   if (cur) startClock();
   opener?.focus?.({ preventScroll: true });
@@ -442,8 +442,8 @@ $('b-share').addEventListener('click', async () => {
   }
   try { await navigator.clipboard.writeText(text); toast('Result copied'); }
   catch {
-    const box = $('share-text'); box.value = text; box.hidden = false; box.focus(); box.select();
-    toast('Select the text and copy it');
+    // The box says what to do in a label of its own: a toast would sit on top of the text it's about.
+    const box = $('share-text'); box.value = text; $('share-box').hidden = false; box.focus(); box.select();
   }
 });
 

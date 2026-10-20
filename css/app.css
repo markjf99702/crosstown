@@ -299,6 +299,8 @@ a { color: inherit; }
 .key i { flex: none; width: 22px; height: 8px; border-radius: 4px; background: var(--cross); }
 .key .c1 { background: var(--l1); } .key .c2 { background: var(--l2); } .key .c3 { background: var(--l3); } .key .c4 { background: var(--l4); }
 .key .c5 { background: var(--l5); } .key .c6 { background: var(--l6); } .key .c7 { background: var(--l7); } .key .c8 { background: var(--l8); }
+.share-box { display: flex; flex-direction: column; gap: 4px; }
+.share-label { color: var(--muted); font-size: 13.5px; }
 .share-text { width: 100%; border: 2px solid var(--rule); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; padding: 8px 10px; resize: none; }
 
 .toast { position: fixed; left: 50%; bottom: calc(96px + var(--safe-bottom)); transform: translateX(-50%); z-index: 20; background: var(--ink); color: var(--bg); font-weight: 700; padding: 10px 16px; border-radius: 22px; max-width: calc(100% - 32px); text-align: center; animation: rise .18s ease-out; }
