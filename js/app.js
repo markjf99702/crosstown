@@ -191,6 +191,7 @@ function leave() {
   stopClock();
   if (cur && (cur.game.found.length || cur.game.detours.length || cur.game.ms > 5000)) keep();
   cur = null;
+  drag = null;   // Back can come in the middle of a drag, and letting go after it has no puzzle to spell the word on
   $('s-play').hidden = true; $('s-list').hidden = false;
   drawList();
 }

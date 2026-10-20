@@ -535,6 +535,28 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await other.close();
 }
 
+// A Back that comes in the middle of a drag (the browser's button, or a mouse's back button with the other one
+// still down) goes to the list, and letting go afterwards does nothing: no error, and no half-traced word kept.
+{
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: {} });
+  await tab.click('#route li:nth-child(1) .row');
+  const box = await tab.locator('#board').boundingBox();
+  const at = i => [box.x + (i % 6 + 0.5) * box.width / 6, box.y + (Math.floor(i / 6) + 0.5) * box.height / 8];
+  await tab.mouse.move(...at(p.lines[1][0]));
+  await tab.mouse.down();
+  for (const i of p.lines[1].slice(1, 3)) await tab.mouse.move(...at(i), { steps: 3 });
+  await tab.goBack();
+  await tab.waitForFunction(() => !document.getElementById('s-list').hidden, null, { timeout: 5000 });
+  await tab.mouse.up();
+  await tab.evaluate(() => new Promise(requestAnimationFrame));
+  assert.deepEqual(errors, [], 'letting go after a Back in the middle of a drag');
+  assert.equal(await tab.textContent('#route li:nth-child(1) .row-sub'), `${p.lines.length} lines`, 'a word cut off by Back should not count');
+  await tab.click('#route li:nth-child(1) .row');
+  await drag(tab, p.lines[1]);
+  assert.equal(await tab.textContent('#count'), `1 of ${p.lines.length} lines`, 'the next drag should trace as usual');
+  await other.close();
+}
+
 // It can be installed.
 const cdp = await ctx.newCDPSession(page);
 const manifest = await cdp.send('Page.getAppManifest');
