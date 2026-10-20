@@ -480,6 +480,61 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await other.close();
 }
 
+// Back (the browser's, or the back gesture in the installed app) goes from a puzzle to the list, closing an open
+// sheet first, and Forward opens the puzzle again. Next puzzle doesn't add a step, so Back still means the list. The
+// back arrow and a reload on a puzzle leave no step behind, so one Back from the list leaves the game.
+{
+  const [a, b] = PUZZLES;
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: {
+    [a.id]: { found: a.lines.map((_, k) => k).slice(1), detours: [] },
+    [b.id]: { found: [1], detours: [] },
+  } });
+  const see = (want, why) => tab.waitForFunction(want => (document.getElementById('s-list').hidden ? document.getElementById('where').textContent : 'list') === want, want, { timeout: 5000 }).catch(() => assert.fail(why));
+  const left = await tab.evaluate(() => history.length);
+  await tab.click('#route li:nth-child(2) .row');
+  await see('No. 2', 'the puzzle should open');
+  await tab.goBack();
+  await see('list', 'Back should go from a puzzle to the list');
+  assert.equal(await tab.textContent('#route li:nth-child(2) .row-sub'), `1 of ${b.lines.length} lines found`);
+  await tab.goForward();
+  await see('No. 2', 'Forward should open the puzzle again');
+  await tab.click('#b-menu');
+  await tab.goBack();
+  await see('No. 2', 'Back with a sheet open should stay on the puzzle');
+  assert.equal(await tab.isHidden('#sheet-menu'), true, 'Back should close the open sheet');
+  await tab.goBack();
+  await see('list', 'Back after closing a sheet should go to the list');
+
+  await tab.click('#b-continue');
+  await see('No. 1');
+  await drag(tab, a.lines[0]);
+  await tab.waitForSelector('#sheet-done:not([hidden])');
+  await tab.click('#b-done-next');
+  await see('No. 2');
+  await tab.goBack();
+  await see('list', 'Back after Next puzzle should go to the list, not the puzzle before');
+
+  // The back arrow, even with another puzzle opened before its Back has come through.
+  await tab.click('#route li:nth-child(2) .row');
+  await see('No. 2');
+  await tab.evaluate(() => { document.getElementById('b-back').click(); document.querySelector('#route li:nth-child(3) .row').click(); });
+  await see('No. 3');
+  await tab.waitForFunction(id => history.state?.crosstown === id, PUZZLES[2].id, { timeout: 5000 });
+  await tab.goBack();
+  await see('list', 'Back after the back arrow should go to the list');
+
+  await tab.click('#route li:nth-child(2) .row');
+  await see('No. 2');
+  await tab.reload();
+  await see('list', 'a reload should open on the list');
+  await tab.waitForFunction(() => history.state === null, null, { timeout: 5000 });
+  assert.equal(await tab.evaluate(() => history.length), left + 1, 'the history should hold one step for a puzzle, no more');
+  assert.deepEqual(errors, []);
+  await tab.goBack();   // to the blank page the tab started on, where the seeding script can't run
+  assert.equal(tab.url(), 'about:blank', 'one Back from the list should leave the game');
+  await other.close();
+}
+
 // It can be installed.
 const cdp = await ctx.newCDPSession(page);
 const manifest = await cdp.send('Page.getAppManifest');

@@ -84,7 +84,7 @@ function drawList() {
     const go = document.createElement('span'); go.className = 'row-go'; go.setAttribute('aria-hidden', 'true');
     go.textContent = state === 'going' ? 'Resume' : state === 'done' ? 'Map' : '';
     btn.append(num, main, go);
-    btn.addEventListener('click', () => openPuzzle(i));
+    btn.addEventListener('click', () => fromList(i));
     li.append(btn); route.append(li);
   });
   const up = nextUp();
@@ -448,7 +448,7 @@ function showDone() {
   openSheet('sheet-done');
 }
 $('b-results').addEventListener('click', showDone);
-const goNext = () => { const n = nextUp(cur.i); closeSheets(); if (n >= 0) { stopClock(); keep(); openPuzzle(n); } };
+const goNext = () => { const n = nextUp(cur.i); closeSheets(); if (n >= 0) { stopClock(); keep(); openPuzzle(n); changeStep(); } };
 $('b-next').addEventListener('click', goNext);
 $('b-done-next').addEventListener('click', goNext);
 
@@ -470,11 +470,46 @@ function toast(text) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
 }
 
+// ---- Back -------------------------------------------------------------------------------------------------------
+// Back (the browser's, or the back gesture in the installed app) goes from a puzzle to the list. Opening a puzzle
+// from the list adds a step to the history, and Next puzzle changes that step instead of adding one, so Back always
+// means the list. With a sheet open, Back closes the sheet first; Forward opens the puzzle again. The one-file copy
+// leaves the history alone, since it belongs to the page around it.
+const STEP = 'crosstown';   // the key in the history's state that names the puzzle open at that step
+let backing = false;        // the back arrow asked the history for a Back that hasn't come through yet
+
+function fromList(i) { openPuzzle(i); addStep(); }
+function addStep() {
+  if (single || backing) return;   // a Back on its way adds the step when it comes through
+  try { history.pushState({ [STEP]: cur.p.id }, ''); } catch { /* no history to add to: the back arrow still works */ }
+}
+function changeStep() {
+  if (!single && history.state?.[STEP]) try { history.replaceState({ [STEP]: cur.p.id }, ''); } catch { /* same */ }
+}
+// The back arrow shows the list straight away, then takes the puzzle's step off the history.
+function back() {
+  leave();
+  if (!single && history.state?.[STEP]) { backing = true; history.back(); }
+}
+window.addEventListener('popstate', e => {
+  if (single) return;
+  const id = e.state?.[STEP];
+  if (backing) { backing = false; if (cur) addStep(); return; }
+  if (cur && !id) {
+    if (anySheet()) { closeSheets(); addStep(); } else leave();
+  } else if (!cur && id) {
+    const i = PUZZLES.findIndex(p => p.id === id);
+    if (i >= 0) { if (anySheet()) closeSheets(); openPuzzle(i); }
+  }
+});
+
 // ---- start ------------------------------------------------------------------------------------------------------
-$('b-back').addEventListener('click', leave);
-$('b-continue').addEventListener('click', () => { const n = nextUp(); if (n >= 0) openPuzzle(n); });
+$('b-back').addEventListener('click', back);
+$('b-continue').addEventListener('click', () => { const n = nextUp(); if (n >= 0) fromList(n); });
 window.addEventListener('pagehide', () => { if (cur) { stopClock(); keep(); } });
 drawList();
+// A reload on a puzzle's step opens on the list, so that step goes too, and Back from the list leaves the game.
+if (!single && history.state?.[STEP]) { backing = true; history.back(); }
 
 if (!single && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
