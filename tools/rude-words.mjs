@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const listed = new Set(require('naughty-words').en.map(w => w.toLowerCase()));
-// That list misses plurals and a few slurs, so these catch the rest.
+// That list misses plurals, a few slurs and a few words a family game shouldn't congratulate, so these catch the rest.
 const RUDE = new RegExp([
   'fuck', 'shit', 'piss', 'cunt', 'penis', 'vagina', 'slut', 'whore', 'bitch', 'wank', 'twat', 'dildo', 'semen', 'jizz',
   'porn', 'nazi', 'nigger', 'nigga', 'faggot', 'redskin', 'darkie', 'darky', 'sambo', 'honky', 'honkie', 'tranny',
@@ -13,6 +13,7 @@ const RUDE = new RegExp([
   '^tit(s|ty|ties)$', '^cum(s|ming)?$', '^nigs?$', '^fags?$', '^kikes?$', '^spics?$', '^chink(s|y)?$', '^gooks?$',
   '^wops?$', '^dago(s|es)?$', '^coons?$', '^japs?$', '^pakis?$', '^retard(s|ed)?$', '^spaz.*', '^dykes?$', '^homos?$',
   '^gyp(s|ped|ping)?$', '^krauts?$', '^arse(s|hole.*)?$', '^turds?$', '^craps?$', '^crapp.*',
+  '^sperm$', '^testes$', '^prick$', '^shag$', '^bonk$', '^harlot$', '^nonce$',
 ].join('|'));
 const refused = w => listed.has(w) || RUDE.test(w);
 

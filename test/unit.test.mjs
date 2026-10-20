@@ -88,6 +88,9 @@ for (const p of PUZZLES) {
 test('rude words stay out with -s, -es, -d or -ed on the end, and plain words that only look like them stay in', () => {
   for (const w of ['clits', 'boners', 'nudes', 'orgies', 'arsed', 'asses']) assert.ok(isRude(w), `${w} should stay out`);
   for (const w of ['spices', 'spiced', 'crapes', 'classes', 'passed', 'stories', 'clocks']) assert.ok(!isRude(w), `${w} should count`);
+  // Words a family game shouldn't congratulate, and longer words that only start with one of them.
+  for (const w of ['sperm', 'testes', 'prick', 'pricks', 'pricked', 'shag', 'bonk', 'harlot', 'harlots', 'nonce']) assert.ok(isRude(w), `${w} should stay out`);
+  for (const w of ['prickle', 'prickly', 'shaggy', 'shagreen', 'spermaceti', 'gymnosperm', 'bonkers', 'harlotry', 'testis']) assert.ok(!isRude(w), `${w} should count`);
 });
 
 test('fare and stars', () => {
