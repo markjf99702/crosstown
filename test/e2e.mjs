@@ -353,6 +353,27 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await other.close();
 }
 
+// Each arrow move on the map is read out to screen readers in a line of its own that isn't on screen: the letter
+// and where it is, whether a token has ringed it, or the line it's on once that line is found.
+{
+  const { other, tab, errors } = await visitor({ options: {}, best: {}, games: { [p.id]: { found: [0, 2], detours: [], hint: { line: 1, level: 2 } } } });
+  await tab.click('#b-continue');
+  await tab.focus('#board');
+  const at = i => `row ${Math.floor(i / 6) + 1}, column ${i % 6 + 1}`;
+  const hears = async (stop, words) => { await walk(stop, tab); assert.equal(await tab.evaluate(() => document.getElementById('spoken')?.textContent), words, 'an arrow move should be read out'); };
+  const open = p.lines[3][1], route = p.lines[1];
+  await hears(open, `${p.grid[open]}, ${at(open)}`);
+  await hears(p.lines[2][1], `${p.grid[p.lines[2][1]]}, on the ${words[2]} line, ${at(p.lines[2][1])}`);
+  await hears(p.lines[0][0], `${p.grid[p.lines[0][0]]}, on the Crosstown, ${at(p.lines[0][0])}`);
+  await hears(route[1], `${p.grid[route[1]]}, ${at(route[1])}, ringed`);
+  await hears(route[0], `${p.grid[route[0]]}, ${at(route[0])}, ringed, the route starts here`);
+  const spoken = await tab.evaluate(() => { const s = document.getElementById('spoken'), r = s.getBoundingClientRect(); return { live: s.getAttribute('aria-live'), w: r.width, h: r.height, inPlay: document.getElementById('s-play').contains(s) }; });
+  assert.ok(spoken.live === 'polite' && spoken.w <= 1 && spoken.h <= 1 && spoken.inPlay, `the moves should be read out, not shown: ${JSON.stringify(spoken)}`);
+  assert.equal(await tab.textContent('#readout'), '', 'moving the cursor should leave the readout alone');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // Where the clipboard can't be used, Share puts the result in a box to copy by hand, with what to do in a label just
 // above it, not in a toast on top of it. Where it can, a toast says the result was copied.
 {

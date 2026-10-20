@@ -175,7 +175,7 @@ function openPuzzle(i) {
   p.lines.forEach((line, k) => line.forEach(stop => { lineOf[stop] = k; }));
   const game = { ...(gameFor(p.id) || fresh()), grid: p.grid };
   cur = { i, p, words: p.lines.map(l => spell(p.grid, l)), extra: new Set(p.detours.split(' ')), lineOf, game };
-  sel = []; cursor = -1;
+  sel = []; cursor = -1; $('spoken').textContent = '';
   $('where').textContent = `No. ${i + 1}`;
   buildBoard();
   for (const k of game.found) drawLine(k, false);
@@ -265,6 +265,17 @@ const lift = () => {
 board.addEventListener('pointerup', lift);
 board.addEventListener('pointercancel', () => { drag = null; });
 
+// Each arrow move is read out to screen readers in a line of its own, kept off the screen and apart from the
+// readout: the letter and where it is, and whether a token has ringed it, or the line it's on once that line is
+// found. The row and column come every time, so two stops that are otherwise alike still sound different.
+function speak(i) {
+  const k = cur.lineOf[i], at = `row ${row(i) + 1}, column ${col(i) + 1}`, hint = cur.game.hint;
+  let words = `${cur.p.grid[i]}, ${at}`;
+  if (taken(i)) words = `${cur.p.grid[i]}, on the ${k ? `${cur.words[k]} line` : 'Crosstown'}, ${at}`;
+  else if (hint?.line === k) words += hint.level > 1 && cur.p.lines[k][0] === i ? ', ringed, the route starts here' : ', ringed';
+  $('spoken').textContent = words;
+}
+
 // On a finished map every stop is on a found line, so the arrows and Enter only name lines there, as a tap does.
 board.addEventListener('keydown', e => {
   if (!cur) return;
@@ -272,6 +283,7 @@ board.addEventListener('keydown', e => {
   if (step) {
     if (cursor < 0) cursor = sel.length ? sel[sel.length - 1] : 0;
     else { const r = row(cursor) + step[0], c = col(cursor) + step[1]; if (r >= 0 && r < H && c >= 0 && c < W) cursor = r * W + c; }
+    speak(cursor);
   } else if (e.key === 'Enter' || e.key === ' ') {
     if (cursor < 0) return;
     const at = sel.indexOf(cursor);
@@ -287,7 +299,8 @@ board.addEventListener('keydown', e => {
   } else return;
   e.preventDefault(); paint();
 });
-board.addEventListener('blur', () => { if (cursor >= 0) { cursor = -1; if (cur) paint(); } });
+// Coming back to the map reads out where the cursor lands, even if it's the stop it left from.
+board.addEventListener('blur', () => { $('spoken').textContent = ''; if (cursor >= 0) { cursor = -1; if (cur) paint(); } });
 
 function submit() {
   const { p, game, words } = cur;
