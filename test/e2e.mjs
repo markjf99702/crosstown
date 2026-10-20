@@ -430,6 +430,35 @@ for (const [width, height] of [[360, 780], [320, 568]]) {
   await other.close();
 }
 
+// Each saved game keeps its board's letters. Progress on a board laid out again since starts fresh, since its line
+// numbers would draw lines on the wrong letters, but its best time stays. A game saved before games kept their
+// letters counts as one on the board as it is now.
+{
+  const [a, b, c] = PUZZLES;
+  const relaid = a.grid.split('').reverse().join('');
+  const { other, tab, errors } = await visitor({ options: { clock: true }, best: { [a.id]: 61000 }, games: {
+    [a.id]: { ...finished(a), grid: relaid },
+    [b.id]: { found: [1], detours: [] },
+    [c.id]: { found: [2], detours: [], grid: c.grid },
+  } });
+  assert.equal(await tab.textContent('#route li:nth-child(1) .row-sub'), `${a.lines.length} lines`, 'progress on a board laid out again should start fresh');
+  assert.equal(await tab.textContent('#route li:nth-child(2) .row-sub'), `1 of ${b.lines.length} lines found`, 'a game saved without its letters should be kept');
+  assert.equal(await tab.textContent('#route li:nth-child(3) .row-sub'), `1 of ${c.lines.length} lines found`);
+  await tab.click('#route li:nth-child(1) .row');
+  assert.equal(await tab.textContent('#count'), `0 of ${a.lines.length} lines`);
+  assert.equal(await tab.locator('#board .line').count(), 0);
+  await drag(tab, a.lines[1]);
+  await tab.click('#b-back');
+  await tab.click('#route li:nth-child(2) .row');
+  await tab.click('#b-back');
+  const stored = await tab.evaluate(() => JSON.parse(localStorage.getItem('crosstown.v1')));
+  assert.equal(stored.best[a.id], 61000, 'the best time should stay');
+  assert.deepEqual([stored.games[a.id].grid, stored.games[a.id].found], [a.grid, [1]], 'a saved game should keep its board\'s letters');
+  assert.deepEqual([stored.games[b.id].grid, stored.games[b.id].found], [b.grid, [1]], 'a game saved without its letters should take them on');
+  assert.deepEqual(errors, []);
+  await other.close();
+}
+
 // It can be installed.
 const cdp = await ctx.newCDPSession(page);
 const manifest = await cdp.send('Page.getAppManifest');

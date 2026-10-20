@@ -23,10 +23,14 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } c
 
 // A saved game, read against its puzzle, so a damaged save or one from an older layout of the board can't stop
 // the page: line numbers the board doesn't have are dropped, and anything else that can't be read starts fresh.
+// Each game keeps the letters of the board it was played on (`grid`). If the board has been laid out again since,
+// its line numbers would draw lines on the wrong letters, so the puzzle starts fresh; its best time stays. A game
+// saved before games kept their letters counts as one on the board as it is now.
 const byId = new Map(PUZZLES.map(p => [p.id, p]));
 function gameFor(id) {
   const g = saved.games[id], p = byId.get(id);
   if (!isObject(g) || !p) return null;
+  if (typeof g.grid === 'string' && g.grid !== p.grid) return null;
   const n = p.lines.length;
   const count = v => (Number.isInteger(v) && v >= 0 ? v : 0);
   const found = Array.isArray(g.found) ? [...new Set(g.found.filter(k => Number.isInteger(k) && k >= 0 && k < n))] : [];
@@ -169,7 +173,7 @@ function openPuzzle(i) {
   const p = PUZZLES[i];
   const lineOf = new Int8Array(N);
   p.lines.forEach((line, k) => line.forEach(stop => { lineOf[stop] = k; }));
-  const game = gameFor(p.id) || fresh();
+  const game = { ...(gameFor(p.id) || fresh()), grid: p.grid };
   cur = { i, p, words: p.lines.map(l => spell(p.grid, l)), extra: new Set(p.detours.split(' ')), lineOf, game };
   sel = []; cursor = -1;
   $('where').textContent = `No. ${i + 1}`;
