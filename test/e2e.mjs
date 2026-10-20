@@ -254,6 +254,8 @@ function contrast(a, b) {
   assert.equal(await letters(tab), 'visible', 'the finished map should show behind the done sheet');
   assert.equal(await tab.isHidden('#b-done-next'), true);
   assert.equal(await tab.evaluate(() => document.activeElement.id), 'b-share', 'the last done sheet should start on Share');
+  const earned = await tab.evaluate(() => ({ fill: getComputedStyle(document.querySelector('#done-stars .got svg')).fill, bg: getComputedStyle(document.querySelector('#sheet-done .panel')).backgroundColor }));
+  assert.ok(contrast(earned.fill, earned.bg) >= 3, `the stars earned are hard to see on the done sheet: ${JSON.stringify(earned)}`);
 
   // On the finished map the arrows and Enter name the lines, the same as tapping a stop.
   await tab.keyboard.press('Escape');
@@ -276,6 +278,9 @@ function contrast(a, b) {
     });
     assert.equal(btn.text, 'All finished');
     assert.ok(btn.disabled && contrast(btn.color, btn.bg) >= 4.5, `"All finished" is hard to read in ${colorScheme}: ${JSON.stringify(btn)}`);
+    // The stars on the list are small text, so full and empty ones need the contrast text does to tell apart.
+    const stars = await tab.evaluate(() => ({ color: getComputedStyle(document.querySelector('#route .st')).color, bg: getComputedStyle(document.body).backgroundColor }));
+    assert.ok(contrast(stars.color, stars.bg) >= 4.5, `the stars on the list are hard to see in ${colorScheme}: ${JSON.stringify(stars)}`);
   }
   assert.deepEqual(errors, []);
   await other.close();
