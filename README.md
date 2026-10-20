@@ -9,7 +9,7 @@
   &nbsp;
   <img src="docs/phone-play.png" alt="A puzzle midway: the clue on a dark sign, a blue line, an orange line and the striped Crosstown already drawn, a word half traced in grey, and nine stops ringed by a hint" width="250">
   &nbsp;
-  <img src="docs/phone-map.png" alt="A finished map in the dark palette: seven coloured lines covering all 48 letters, with the white Crosstown winding from the left edge to the right" width="250">
+  <img src="docs/phone-map.png" alt="A finished map in the dark palette: seven coloured lines covering all 48 letters, with the white Crosstown winding from the right edge to the left" width="250">
 </p>
 
 ## How it plays
